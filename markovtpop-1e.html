@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<title>Markov Chain Algorithm in Python</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="w3.css">
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css?family=Raleway|Yanone+Kaffeesatz:400" rel="stylesheet">
+<meta name="author" content="Paul Eissen">
+<meta name="description" content="markov-tpop.py">
+<meta name="keywords"
+      content="The Practice of Programming, Markov Chain Algorithm,
+               Sentinel Value, Python">
+</head>
+<body>
+
+<div class="w3-container w3-center w3-white w3-border-gray w3-border-bottom">
+<p class="title">
+Markov Chain Algorithm in Python
+</p>
+<p class="author">
+by <a href="index.html">Paul Eissen</a>
+</p>
+<p class="date">
+19 April 2018
+</p>
+</div>
+
+<div class="w3-container w3-white">
+<p id="ref1-4">
+In my humble opinion,
+Kernighan and Pike's
+<a href="https://www.cs.princeton.edu/~bwk/tpop.webpage/" target="_blank">
+<i>The Practice of Programming</i></a> <a href="#1">[1]</a> <a href="#2">[2]</a>
+is a book every programmer should read
+(and not just because I'm a fan of all things C and UNIX).
+A few years ago I was reading Chapter 3,
+<i>Design and Implementation</i>,
+whichs examines how programming problems influence the way
+data structures are used, and recognizes that
+&ldquo;[p]rogram design can certainly be colored by a language
+but is not usually dominated by it." <a href="#3">[3]</a>
+To put some (virtual) flesh on these assertions,
+the authors chose to implement the <i>Markov chain algorithm</i>
+in five programming languages
+(C, Java, C++, Awk, and Perl). <a href="#4">[4]</a>
+</p>
+
+<p id="ref5">
+This particular Markov chain algorithm reads English text and generates
+(sometimes humorous) output that resembles English.
+Input text is broken up into three-word tuples consisting of
+a two-word <i>prefix</i> (<i>w1</i> and <i>w2</i> shown below)
+followed by a single <i>suffix</i> word
+(<i>w3</i>):
+<blockquote>
+<pre>
+set w1 and w2 to the first two words in the text
+print w1 and w2
+loop:
+    randomly choose w3, one of the successors of prefix w1 w2 in the text
+    print w3
+    replace w1 and w2 by w2 and w3
+    repeat loop <a href="#5">[5]</a>
+</pre>
+</blockquote>
+(Obviously, the last two words in the input will not have a suffix.)
+A <i>word</i> consists of all non-whitespace characters (including leading
+and/or trailing punctuation) contained between
+whitespace and/or EOF.
+</p>
+
+<p id="ref6">
+For instance, given this input text: <a href="#6">[6]</a>
+<blockquote>
+Show your flowcharts and conceal your tables and I will be mystified.
+Show your tables and your flowcharts will be obvious.
+</blockquote>
+the algorithm will
+discover the following prefixes (left column) and suffixes
+(right column):
+<blockquote>
+<pre>
+Show your       flowcharts tables
+your flowcharts and will
+flowcharts and  conceal
+and conceal     your
+conceal your    tables
+your tables     and and
+tables and      I your
+and I           will
+I will          be
+will be         mystified. obvious.
+be mystified.   Show
+mystified Show  your
+and your        flowcharts
+flowcharts will be
+be obvious.     EOF
+</pre>
+</blockquote>
+and then print the first prefix &ldquo;Show your", randomly select, say,
+&ldquo;tables", print this word,
+create a new prefix &ldquo;your tables",
+and so on until the final prefix, &ldquo;be obvious." is reached
+(and printed).
+</p>
+
+<p>
+At the time, I knew enough
+<a href="https://www.python.org/" target="_blank">Python</a>
+to be dangerous,
+so I decided to implement the Markov chain algorithm in this
+scripting language.
+The rest of the article explains what I came up with and why.
+</p>
+
+<p class="heading">
+Source Code
+</p>
+
+<p id="ref7">
+Not surprisingly,
+my implementation <a href="#7">[7]</a>
+resembles the ones found in the book,
+although the Python-isms made it more streamlined.
+The code presented in the following sections
+are not necessarily in the order required by Python;
+I chose this method for pedagogical reasons.
+</p>
+
+<p>
+<i>First Things</i>
+</p>
+
+<p>
+The
+<i>markov-tpop.py</i>
+script requires the services of the following standard Python modules:
+<blockquote>
+<pre>
+import sys
+import random
+import string
+</pre>
+</blockquote>
+</p>
+
+<p id="ref8">
+Next, two global variables are defined:
+<blockquote>
+<pre>
+NPREF = 2
+NONWORD = '\n'
+</pre>
+</blockquote>
+A prefix consists of two words,
+because for English at least, &ldquo;using two words to select
+a third is a good compromise: it seems to recreate the flavor
+of the input while adding its own whimsical touch." <a href="#8">[8]</a>
+</p>
+
+<p id="ref9-11">
+We also define a variable that represents a non-word,
+something that is <i>not</i> seen by the input text processing code.
+In addition to acting as a &ldquo;marker word to terminate
+the algorithm," <a href="#9">[9]</a>
+this variable plays the part of a <i>sentinal</i> value,
+in that the programmatic appending of a non-word to the input data
+&ldquo;simplifies the main processing loops of the program
+significantly." <a href="#10">[10]</a>
+Finally, to handle the case of insufficient input (e.g.,
+a file consisting of a single word) without the use of ugly special-case
+code, prior to reading the input, a prefix consisting of two non-words
+is constructed,
+&ldquo;which guarantees there is always enough input for the program...
+This has the nice benefit that the first word of the input file
+will be the first <i>suffix</i> of the fake prefix, so the generation
+loop needs to print only the suffixes it produces." <a href="#11">[11]</a>
+</p>
+
+<p>
+<i>Data Structures</i>
+</p>
+
+<p>
+In their C implementation, the authors had to create their own
+data structures
+(linked lists, hash tables, etc.) by hand, but Python's native
+<i>lists</i> and <i>dictionaries</i> seem almost
+tailor-made for programs like ours.
+We merely have to define a single empty dictionary:
+<blockquote>
+<pre>
+statetab = {}
+</pre>
+</blockquote>
+</p>
+
+<p id="ref12">
+A prefix and all of its possible suffixes is known as a <i>state</i>,
+&ldquo;which is standard terminology
+for Markov algorithms," <a href="#12">[12]</a>
+hence the name of this global variable.
+In our script,
+a prefix is a Python list that serves as a <i>key</i>
+to look up in <i>statetab</i> the
+corresponding suffix(es), which reside in a separate list.
+</p>
+
+<p>
+<i>The Driver</i>
+</p>
+
+<p>
+The &ldquo;main" function looks like this:
+<blockquote>
+<pre>
+if __name__ == '__main__':
+    MAXGEN = 10000
+
+    prefix = []
+
+    for i in range(NPREF):
+        prefix.append(NONWORD)
+
+    build(prefix)
+    add(prefix, NONWORD)
+
+    generate(MAXGEN)
+
+    sys.exit(0)
+</pre>
+</blockquote>
+</p>
+
+<p>
+(Note the lack of special-purpose code to catch edge cases.
+Our script can handle empty input files, files with a single word,
+and files with two words.)
+The initial prefix is constructed, which is then used to kick off
+input file processing.
+A non-word is made the synthetic suffix for the last prefix
+prior to generating
+the output text.
+For grins, we limit the program output to 10,000 generated words.
+</p>
+
+<p>
+<i>Processing Input</i>
+</p>
+
+<p>
+The work of processing the input file
+is divided between two functions.
+The simplest way to obtain input data is to force the user
+to provide the contents of a file to <i>stdin</i>.
+(On the Unix command line, this may be accomplished
+by <i>cat</i>-ing a text file and then
+piping the output to our Python script.)
+<blockquote>
+<pre>
+def build(prefix):
+    for line in sys.stdin.readlines():
+        if len(line.strip(string.whitespace)) == 0:
+            continue
+        for word in line.split():
+            add(prefix, word)
+            prefix.pop(0)
+            prefix.append(word)
+
+    return
+</pre>
+</blockquote>
+</p>
+
+<p>
+Each input line is broken up into zero or more words (as defined above).
+We skip lines that have no words.
+Otherwise, each word encountered is associated with the current prefix.
+Do not miss the fact
+that every time <i>build()</i> is called, <i>prefix</i>
+is modified (think &ldquo;call by reference") for use by the
+subsequent <i>build()</i> invocation.
+</p>
+
+<p>
+If <i>word</i> is the first suffix encountered by <i>prefix</i>,
+we &ldquo;create" a new <i>statetab</i> record,
+otherwise the new suffix is appended to the existing list.
+Note that duplicate suffixes are legal.
+Python does not allow <i>mutable</i> objects like lists to serve
+as dictionary keys, so we have to employ immutable tuples.
+<blockquote>
+<pre>
+def add(prefix, word):
+    key = tuple(prefix)
+    if key in statetab:
+        statetab[key].append(word)
+    else:
+        statetab[key] = [word]
+    return
+</pre>
+</blockquote>
+(In their various implementations,
+Kernighan and Pike modify <i>prefix</i> in <i>add()</i>, but we decided
+to edit that parameter in <i>build()</i> instead, since the final call
+to <i>add()</i> in <i>build()</i> has no need to modify <i>prefix</i>.)
+</p>
+
+<p>
+If we were to execute <i>print prefix, statetab[prefix]</i>
+before the <i>return</i> statement in <i>add()</i>,
+the following diagnostic output will be produced
+given our sample
+input sentence:
+<blockquote>
+<pre>
+['\n', '\n'] ['Show']
+['\n', 'Show'] ['your']
+['Show', 'your'] ['flowcharts']
+['your', 'flowcharts'] ['and']
+['flowcharts', 'and'] ['conceal']
+['and', 'conceal'] ['your']
+['conceal', 'your'] ['tables']
+['your', 'tables'] ['and']
+['tables', 'and'] ['I']
+['and', 'I'] ['will']
+['I', 'will'] ['be']
+['will', 'be'] ['mystified.']
+['be', 'mystified.'] ['Show']
+['mystified.', 'Show'] ['your']
+['Show', 'your'] ['flowcharts', 'tables']
+['your', 'tables'] ['and', 'and']
+['tables', 'and'] ['I', 'your']
+['and', 'your'] ['flowcharts']
+['your', 'flowcharts'] ['and', 'will']
+['flowcharts', 'will'] ['be']
+['will', 'be'] ['mystified.', 'obvious.']
+['be', 'obvious.'] ['\n']
+</pre>
+</blockquote>
+</p>
+
+<p>
+<i>Generating Output</i>
+</p>
+
+<p>
+In the diagnostic output, the first record in <i>statetab</i>
+consists of two non-words with a single suffix that happens to be the
+first input word, and the second record contains the second input word.
+This is an ingenious method on the authors' part for arranging the
+printing of the first input prefix without the use of special-purpose
+code.
+<blockquote>
+<pre>
+def generate(nwords):
+    prefix = []
+
+    for i in range(NPREF):
+        prefix.append(NONWORD)
+
+    random.seed()
+
+    for i in range(nwords):
+        suffixes = statetab[tuple(prefix)]
+        word = random.choice(suffixes)
+        if word == NONWORD:
+            break
+        print word,
+        prefix.pop(0)
+        prefix.append(word)
+
+    return
+</pre>
+</blockquote>
+</p>
+
+<p id="ref13">
+The <i>random</i> Python module does a passable job of enabling
+<i>generate()</i>
+to choose
+one of the suffixes from the list.
+The comma in the <i>print</i> statement
+&ldquo;suppresses the end-of-line character
+normally added at the end of the printed text." <a href="#13">[13]</a>
+In practice, <i>word</i> is printed along with a single space character,
+except for the last word to be printed, which is followed by a non-word,
+the &lsquo;\n' character,
+which just so happens to be the
+&ldquo;suffix" associated with the final prefix,
+one reason why the main driver makes that call to <i>add()</i>.
+The other reason is that processing will halt if this suffix
+is encountered before <i>nwords</i> have been printed.
+</p>
+
+<p>
+So our original sample input:
+<blockquote>
+Show your flowcharts and conceal your tables and I will be mystified.
+Show your tables and your flowcharts will be obvious.
+</blockquote>
+may be rewritten many different ways:
+<blockquote>
+<pre>
+$ ./markov-tpop.py < brooks.txt | fmt
+Show your flowcharts will be mystified. Show your flowcharts and conceal
+your tables and your flowcharts will be mystified. Show your flowcharts
+and conceal your tables and your flowcharts and conceal your tables and
+your flowcharts and conceal your tables and I will be obvious.
+
+$ ./markov-tpop.py < brooks.txt | fmt
+Show your flowcharts will be obvious.
+
+$ ./markov-tpop.py < brooks.txt | fmt
+Show your tables and I will be mystified. Show your flowcharts will
+be obvious.
+</pre>
+</blockquote>
+</p>
+
+<p class="heading">
+Fun Example
+</p>
+
+<p>
+<a href="http://www.gutenberg.org/files/1342/1342-h/1342-h.htm#link2HCH0001" target="_blank">
+Chapter 1</a>
+of Jane Austin's
+<i>Pride and Prejudice</i>
+opens with this famous sentence (you may have to click twice on the link to get the actual text):
+<blockquote>
+It is a truth universally acknowledged,
+that a single man in possession of a good fortune, must be in want of a wife.
+</blockquote>
+and ends like this:
+<blockquote>
+The business of her life was to get her daughters married;
+its solace was visiting and news.
+</blockquote>
+</p>
+
+<p>
+When we ran our script against Chapter 1, the following was generated:
+<blockquote>
+<pre>
+$ ./markov-tpop.py < pridech1.txt | fmt
+It is a truth universally acknowledged, that a single man in possession
+of a good word for my little Lizzy.” “I desire you will not visit
+them.” “Depend upon it, my dear, that when there are twenty, I
+will send a few lines by you to assure him of my hearty consent to his
+marrying whichever he chooses of the party.” “My dear, you flatter
+me. I certainly have had my share of beauty, but I do not pretend to be
+in want of a wife. However little known the feelings or views of such
+a way? You take delight in vexing me. You have no compassion for my
+little Lizzy.” “I desire you will do no such thing. Lizzy is not
+a bit better than the others; and I am thinking of her own beauty.”
+“In such cases, a woman has five grown-up daughters, she ought to give
+over thinking of her life was to get her daughters married; its solace
+was visiting and news.
+</pre>
+</blockquote>
+</p>
+
+<p class="heading">
+Notes
+</p>
+
+<ol>
+<li>
+<b><a href="#ref1-3">^</a></b>
+<a name="1"></a>
+Brian W. Kernighan and Rob Pike,
+<i>The Practice of Programming</i>
+(Reading, MA: Addison Wesley, 1999).
+<li>
+<b><a href="#ref1-4">^</a></b>
+<a name="2"></a>
+If you join the
+<a href="https://www.acm.org/" target="_blank">ACM</a>
+as a regular member, you'll get
+<a href="https://learning.acm.org/" target="_blank">access</a>
+to this and thousands
+of other books through their
+agreement with
+<a href="https://www.oreilly.com/" target="_blank">O'Reilly</a>
+Safari.
+</li>
+<li>
+<b><a href="#ref1-4">^</a></b>
+<a name="3"></a>
+K&P, p. 61.
+</li>
+<li>
+<b><a href="#ref1-4">^</a></b>
+<a name="4"></a>
+The authors kindly placed their source code
+<a href="https://www.cs.princeton.edu/~bwk/tpop.webpage/code.html" target="_blank">
+here.</a>
+</li>
+<li>
+<b><a href="#ref5">^</a></b>
+<a name="5"></a>
+K&P, p. 62.
+</li>
+<li>
+<b><a href="#ref6">^</a></b>
+<a name="6"></a>
+Ibid. This is a paraphrase of a quotation from
+Frederick P. Brooks, Jr., <i>The Mythical Man-Month</i>,
+another great book you should read.
+</li>
+<li>
+<b><a href="#ref7">^</a></b>
+<a name="7"></a>
+My script (and sample text files) may be downloaded
+from my
+<a href="https://github.com/pauleissen/markov.tpop" target="_blank">
+Github</a>
+page.
+</li>
+<li>
+<b><a href="#ref8">^</a></b>
+<a name="8"></a>
+K&P, p. 63.
+</li>
+<li>
+<b><a href="#ref9-11">^</a></b>
+<a name="9"></a>
+Ibid., p. 69.
+</li>
+<li>
+<b><a href="#ref9-11">^</a></b>
+<a name="10"></a>
+Ibid.
+</li>
+<li>
+<b><a href="#ref9-11">^</a></b>
+<a name="11"></a>
+Ibid.
+</li>
+<li>
+<b><a href="#ref12">^</a></b>
+<a name="12"></a>
+Ibid., p. 64.
+</li>
+<li>
+<b><a href="#ref13">^</a></b>
+<a name="13"></a>
+Mark Lutz, <i>Learning Python</i>, 5th edition
+(Sebastopol, CA: O'Reilly Media, 2013), p. 362.
+</li>
+</ol>
+</div>
+
+<div class="w3-container w3-center w3-white w3-border-gray w3-border-top">
+<p class="copyright">
+Copyright &copy; 2015, 2018 by <a href="index.html">Paul Eissen</a>.
+Powered by
+<a href="https://www.w3schools.com/w3css/default.asp"
+target="_blank">w3.css</a>
+</p>
+<p>
+<a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank">
+<img src="by-sa.png"
+alt="Creative Commons Attribution-ShareAlike"
+style="width:88px;height:31px;border:0;">
+</a>
+</p>
+</div>
+
+</body>
+</html>

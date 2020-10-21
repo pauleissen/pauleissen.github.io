@@ -1,0 +1,93 @@
+body {
+   color: black;
+   background : white;
+   line-height: 1.5;
+   font-size : 12pt;
+   font-family : 'Raleway', sans-serif;
+}
+table, td, tr, th, span, div, ul, ol {
+    font-size : 12pt;
+    font-family : 'Raleway', sans-serif;
+}
+pre {
+    font-size : 10pt;
+}
+/* Identical to .title below */
+/*
+h6 {
+    font-family : 'Yanone Kaffeesatz', sans-serif;
+    font-weight : normal;
+    font-size : 22pt;
+    margin-top:0;margin-bottom:.5rem;
+}
+*/
+/*
+ * Not sure why this causes a quick replacement of a different font/size
+ * combo when a page is first displayed using Firefox 59.0.2 on Linux x86_64.
+ * Didn't occur with Brave 0.19.116 or Chromium 65.0.3325.181. Dunno about
+ * other browsers.
+ */
+.title {
+    font-family : 'Yanone Kaffeesatz', sans-serif;
+    font-size : 22pt;
+    margin-top:1rem;margin-bottom:0rem;
+}
+.mainauthor {
+    font-family : 'Yanone Kaffeesatz', sans-serif;
+    font-size : 16pt;
+    margin-top:0rem;margin-bottom:1rem;
+}
+.author {
+    font-family : 'Yanone Kaffeesatz', sans-serif;
+    font-size : 16pt;
+    margin-top:0rem;margin-bottom:.25rem;
+}
+.date {
+    font-family : 'Yanone Kaffeesatz', sans-serif;
+    font-size : 13pt;
+    margin-top:0rem;margin-bottom:1rem;
+}
+.copyright {
+    font-family : 'Yanone Kaffeesatz', sans-serif;
+    font-size : 14pt;
+    margin-top:1rem;margin-bottom:0rem;
+}
+.heading {
+    font-family : 'Yanone Kaffeesatz', sans-serif;
+    font-size : 18pt;
+    margin-top:0;margin-bottom:0rem;
+}
+.titlelink {
+    font-family : 'Yanone Kaffeesatz', sans-serif;
+    font-size : 15pt;
+    margin-top:.75rem;margin-bottom:0rem;
+    margin-left:.8rem;
+}
+.titledescr {
+    font-family : 'Raleway', sans-serif;
+    font-size : 12pt;
+    margin-top:0rem;margin-bottom:1.2rem;
+    margin-left:.8rem;
+}
+.titledescrlast {
+    font-family : 'Raleway', sans-serif;
+    font-size : 12pt;
+    margin-top:0rem;margin-bottom:.75rem;
+    margin-left:.8rem;
+}
+a:link {
+    color: rgb(0,0,255);
+    text-decoration: none;
+}
+a:hover {
+    color: rgb(0,0,255);
+    text-decoration: underline;
+}
+a:visited {
+    color: rgb(0,0,255);
+    text-decoration: none;
+}
+a:active {
+    color: rgb(0,0,255); 
+    text-decoration: none;
+}

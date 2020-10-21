@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<title>Editing a C String In-Place</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="w3.css">
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css?family=Raleway|Yanone+Kaffeesatz:400" rel="stylesheet">
+<style>
+img {
+width:100%;
+}
+.clearfix {
+    overflow: auto;
+}
+.img2 {
+    float: left;
+}
+</style>
+<meta name="author" content="Paul Eissen">
+<meta name="description" content="markov-tpop.py">
+<meta name="keywords"
+      content="In-Place, C String, Interview Question">
+</head>
+<body>
+
+<div class="w3-container w3-center w3-white w3-border-gray w3-border-bottom">
+<p class="title">
+Editing a C String In-Place
+</p>
+<p class="author">
+by <a href="index.html">Paul Eissen</a>
+</p>
+<p class="date">
+21 Feb 2020
+</p>
+</div>
+
+<div class="w3-container w3-white">
+<p>
+My least favorite part of a technical interview is the whiteboard exercise,
+in which yours truly has to stand up and try to come up with a solution to a
+non-trivial coding challenge while the interviewer(s) stare at my back and
+marvel at my illegible scribbles and frantic hand-waving.
+</p>
+
+<p>
+I've never been able to solve any of these problems in the time allotted,
+but I'm told the interviewers just want to know how I would reason my way
+to a solution. I wonder, though, what they're really thinking when I can't
+even get past <code>main() {}</code>.
+</p>
+
+<p>
+Recently, I was asked to write a function to edit a C string in-place
+with the goal of removing one or more occurrences of a specified character.
+So if the original string is "google" and 'g' is to be removed, the result
+will be "oole".
+I never reached the code-writing stage,
+but at least I was able to generate a function signature and babble about
+shifting characters to the left (which turned out to be what the interviewers
+were looking for, so I wasn't a complete noob):
+<pre>
+void
+stredit_in_place(char* s, char rmch) {
+    // Huh?
+}
+</pre>
+</p>
+
+<p id="ref1">
+When I got home, I decided I was going to fill in that function
+body even if it killed me. <a href="#1">[1]</a>
+</p>
+
+<p class="heading">
+Left Shift
+</p>
+
+<p>
+After many hours investigating methods
+for shifting chars to be kept on top of chars that need to be removed,
+I stumbled upon the following:
+</p>
+
+<div class="clearfix">
+<a href="leftshift.png" target="_blank">
+<img class="img2" src="leftshift.png" alt="left shift drawing"
+style="width:248px;height:186px;margin-right:10px;border:0;">
+</a>
+</div>
+
+<p style="clear:left">
+</p>
+
+<p>
+That left shift operation looked familiar, but I couldn't remember
+the name of the relevant libc function until I poked around the man pages
+and came across
+<a href="http://man7.org/linux/man-pages/man3/memmove.3.html" target="_blank">
+memmove()</a>.
+I knew this function needed to be enclosed in some sort of loop, and
+eventually I came up with the following
+(minus error checking
+and casts involving <code>ptrdiff_t</code>):
+</p>
+
+<pre>
+void
+stredit_in_place_ftw(char* s, char rmch)
+{
+    char* starts = s;
+    char* ends = s + strlen(s);
+
+    while (1) {
+        if (!(starts = strchr(starts, rmch))) {
+            break;
+        }
+        memmove(starts, (starts + 1), (ends - starts));
+    }
+}
+</pre>
+
+<p>
+The loop body looks for the next matching <code>rmch</code> char, and then
+does the left shift, which we can get away with because memmove() knows how
+to safely copy overlapping memory segments.
+My algorithm
+replaces every <code>rmch</code> char with a left-shifted NUL char
+so that the result
+will always be a legal C string.
+</p>
+
+<p>
+If there are no <code>rmch</code> matches, then
+<a href="http://man7.org/linux/man-pages/man3/strchr.3.html" target="_blank">
+strchr()</a>
+will visit every
+char in the original string exactly once
+until it reaches the trailing NUL char.
+If all the chars are equal to <code>rmch</code>,
+then strchr() will always match the first char in the string until all
+are replaced with NUL chars.
+In fact, each of the chars in the original string will be visited
+exactly once by strchr() no matter what.
+</p>
+
+<p>
+Not bad for a noob.
+</p>
+
+<p class="heading">
+Notes
+</p>
+
+<ol>
+<li>
+<b><a href="#ref1">^</a></b>
+<a name="1"></a>
+After I wrote my code, I was curious to see if the problem exists online.
+The closest match I could find is
+<a href="https://practice.geeksforgeeks.org/problems/remove-spaces/0"
+target="_blank">
+Remove Spaces</a>, but I can't see the solution because
+I don't have an account on that site.
+</li>
+</ol>
+</div>
+
+<div class="w3-container w3-center w3-white w3-border-gray w3-border-top">
+<p class="copyright">
+Copyright &copy; 2020 by <a href="index.html">Paul Eissen</a>.
+Powered by
+<a href="https://www.w3schools.com/w3css/default.asp"
+target="_blank">w3.css</a>
+</p>
+<p>
+<a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank">
+<img src="by-sa.png"
+alt="Creative Commons Attribution-ShareAlike"
+style="width:88px;height:31px;border:0;">
+</a>
+</p>
+</div>
+
+</body>
+</html>
